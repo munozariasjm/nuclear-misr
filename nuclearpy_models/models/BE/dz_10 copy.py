@@ -5,20 +5,22 @@ from math import sqrt
 
 class DuffloZuker10:
     def __init__(self) -> None:
-        self.coeffs = np.array(
-            [
-                0.7043,
-                17.7418,
-                16.2562,
-                37.5562,
-                53.9017,
-                0.4711,
-                2.1307,
-                0.0210,
-                40.5356,
-                6.0632,
-            ],
-            order="F",
+        self.coeffs = (
+            np.array(
+                [
+                    0.7043,
+                    17.7418,
+                    16.2562,
+                    37.5562,
+                    53.9017,
+                    0.4711,
+                    2.1307,
+                    0.0210,
+                    40.5356,
+                    6.0632,
+                ],
+                order="F",
+            ),
         )
 
     def __call__(self, Z, N):
@@ -87,7 +89,7 @@ class DuffloZuker10:
                 )  # n*(D-n)/D        S3(j)
                 dx[I3] = qx[I3] * (2 * oei[I3] - dei[I3])  # n*(D-n)*(2n-D)/D  Q
                 if deformed:
-                    qx[I3] = qx[I3] / np.sqrt(dei[I3])
+                    qx[I3] /= sqrt(dei[I3])  # scaling for deformed
                 for i in range(1, i_max + 1):  # Amplitudes
                     ip = (i - 1) // 2
                     fact = sqrt((ip + 1) * (ip + 2))
@@ -109,16 +111,16 @@ class DuffloZuker10:
             term[1] = sum(op)  # Master term (FM): volume
             term[2] = -term[1] / ra  # surface
             term[1] += sum(os)  # FM + SO
-            term[3] = -t * (t + 2) / (r**2)
+            term[3] = -t * (t + 2) / r**2
             term[4] = -term[3] / ra  # surface
-            if deformed == 0:  # spherical
-                term[5] = dx[0] + dx[1]  # S3  volume
+            if not deformed:  # spherical
+                term[5] = sum(dx)  # S3  volume
                 term[6] = -term[5] / ra  # surface
                 px = sqrt(pp[0]) + sqrt(pp[1])
                 term[7] = qx[0] * qx[1] * (2**px)  # QQ sph.
             else:  # deformed
                 term[8] = qx[0] * qx[1]  # QQ deform.
-            term[4] = (t * (1 - t) / (a * ra**3)) + term[4]  # Wigner term
+            term[4] = t * (1 - t) / (a * ra**3) + term[4]  # Wigner term
             condition = (N > Z, n2[0] == nuclei[0], n2[1] == nuclei[1])  # PAIRING
             term[9] = {
                 (True, True, False): 1 - t / a,
@@ -130,10 +132,99 @@ class DuffloZuker10:
                 (True, True, True): 2 - t / a,
             }.get(condition, 0)
             term[1:] /= ra
-            y[deformed] += np.dot(term, self.coeffs)
-        return y[
-            0
-        ]  # if (Z < 50 or N < 50) else y[1]  # y[0]->spherical, y[1]->deformed
+            y[deformed] = np.dot(term, self.coeffs)
+        return y[0] if Z < 50 else max(y)  # y[0]->spherical, y[1]->deformed
+
+    @staticmethod
+    def compute_nucleons(nuclei):
+        n2 = [0, 0]
+        for I3 in range(2):
+            n2[I3] = 2 * (nuclei[I3] // 2)
+
+        return n2
+
+    @staticmethod
+    def compute_subshell_params(nuclei, n2, ju):
+        noc = np.zeros((len(nuclei), 2))
+        ip_maxs = []
+        for I3 in range(2):
+            ncum = i = 0
+            while True:
+                i += 1
+                idd = (i + 1) if i % 2 else (i * (i - 2) // 4)
+                ncum += idd
+                if ncum < nuclei[I3]:
+                    noc[i - 1, I3] = idd
+                else:
+                    break
+            ip_max = i + 1
+            ip_maxs.append(ip_max)
+            ip = (i - 1) // 2
+            ipm = i // 2
+            moc = nuclei[I3] - ncum + idd
+            noc[i - 1, I3] = moc - ju
+            noc[i, I3] = ju
+        return noc, ip_maxs, ipm
+
+    @staticmethod
+    def compute_ei_shell_params(i, ju, moc, ip, ipm):
+        oei, dei, qx, dx = [0, 0], [0, 0], [0, 0], [0, 0]
+        for I3 in range(2):
+            if i % 2:
+                oei[I3] = moc + ip * (ip - 1)
+                dei[I3] = ip * (ip + 1) + 2
+            else:
+                oei[I3] = moc - ju
+                dei[I3] = (ip + 1) * (ip + 2) + 2
+            qx[I3] = oei[I3] * (dei[I3] - oei[I3] - ju) / dei[I3]
+            dx[I3] = qx[I3] * (2 * oei[I3] - dei[I3])
+
+        return oei, dei, qx, dx
+
+    @staticmethod
+    def compute_amplitudes(i_max, noc, ipm, ju):
+        onp = np.zeros((len(noc), 2, 2))
+        for I3 in range(2):
+            for i in range(1, i_max[I3] + 1):
+                ip = (i - 1) // 2
+                fact = sqrt((ip + 1) * (ip + 2))
+                onp[ip, 0, I3] += noc[i - 1, I3] / fact
+                vm = -1.0 if i % 2 else 0.5 * ip
+                onp[ip, 1, I3] += noc[i - 1, I3] * vm
+
+        return onp
+
+    @staticmethod
+    def compute_fm_and_so_terms(onp, ipm):
+        op, os = [0, 0], [0, 0]
+        for I3 in range(2):
+            for ip in range(ipm + 1):
+                den = ((ip + 1) * (ip + 2)) ** (3.0 / 2)
+                op[I3] += onp[ip, 0, I3]
+                os[I3] += onp[ip, 1, I3] * (1 + onp[ip, 0, I3]) * (ip * ip / den)
+                os[I3] += onp[ip, 1, I3] * (1 - onp[ip, 0, I3]) * ((4 * ip - 5) / den)
+            op[I3] *= op[I3]
+
+        return op, os
+
+    def compute_spherical_and_deformed(nuclei):
+        for deformed in [0, 1]:
+            ju = 4 if deformed else 0
+            term, noc, onp, os, op = [0] * 5, [0] * 5, [0] * 5, [0] * 5, [0] * 5
+            n2 = compute_nucleons(nuclei)
+            noc, ip_maxs, ipm = compute_subshell_params(nuclei, n2, ju)
+            oei, dei, qx, dx = compute_ei_shell_params(
+                ip_maxs[0], ju, noc[ip_maxs[0] - 1, 0], ip_maxs[1] // 2, ip_maxs[1] // 2
+            )
+            oei, dei, qx, dx = compute_ei_shell_params(
+                ip_maxs[0], ju, noc[ip_maxs[0] - 1, 0], ip_maxs[1] // 2, ip_maxs[1] // 2
+            )
+            if deformed:
+                qx = [q / sqrt(d) for q, d in zip(qx, dei)]
+            onp = compute_amplitudes(ip_maxs, noc, ip_maxs[1] // 2, ju)
+            op, os = compute_fm_and_so_terms(onp, ip_maxs[1] // 2)
+
+        return op, os
 
 
 dz_be = DuffloZuker10()

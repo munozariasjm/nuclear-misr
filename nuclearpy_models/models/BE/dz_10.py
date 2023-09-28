@@ -88,9 +88,11 @@ class DuffloZuker10:
                 dx[I3] = qx[I3] * (2 * oei[I3] - dei[I3])  # n*(D-n)*(2n-D)/D  Q
                 if deformed:
                     qx[I3] = qx[I3] / np.sqrt(dei[I3])
-                for i in range(0, i_max + 1):  # Amplitudes
+                for i in range(0, i_max):  # Amplitudes
                     ip = (i - 1) // 2
-                    fact = sqrt((ip + 1) * (ip + 2))
+                    fact = sqrt((ip + 2) * (ip + 1))
+                    if fact == 0:
+                        fact = 1
                     onp[ip, 0, I3] += noc[i - 1, I3] / fact  # for FM term
                     vm = -1.0
                     if i % 2:
@@ -131,7 +133,9 @@ class DuffloZuker10:
             }.get(condition, 0)
             term[1:] /= ra
             y[deformed] += np.dot(term, self.coeffs)
-        return y[0] if (Z < 50 or N < 50) else y[1]  # y[0]->spherical, y[1]->deformed
+        return y[
+            0
+        ]  # if (Z < 50 or N < 50) else y[1]  # y[0]->spherical, y[1]->deformed
 
 
 dz_be = DuffloZuker10()

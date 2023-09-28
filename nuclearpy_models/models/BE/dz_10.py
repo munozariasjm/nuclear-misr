@@ -32,7 +32,7 @@ class DuffloZuker10:
     def init_vars(self):
         term = np.zeros(10, order="F")
         onp = np.zeros((9, 2, 2), order="F")
-        noc = np.zeros((18, 2), order="F")
+        noc = np.zeros((20, 2), order="F")
         op, n2, dx, qx, os, oei, dei, pp, y = [np.zeros(2) for _ in range(9)]
         return term, onp, noc, op, n2, dx, qx, os, oei, dei, pp, y
 
@@ -88,7 +88,7 @@ class DuffloZuker10:
                 dx[I3] = qx[I3] * (2 * oei[I3] - dei[I3])  # n*(D-n)*(2n-D)/D  Q
                 if deformed:
                     qx[I3] = qx[I3] / np.sqrt(dei[I3])
-                for i in range(1, i_max + 1):  # Amplitudes
+                for i in range(0, i_max + 1):  # Amplitudes
                     ip = (i - 1) // 2
                     fact = sqrt((ip + 1) * (ip + 2))
                     onp[ip, 0, I3] += noc[i - 1, I3] / fact  # for FM term
@@ -131,9 +131,7 @@ class DuffloZuker10:
             }.get(condition, 0)
             term[1:] /= ra
             y[deformed] += np.dot(term, self.coeffs)
-        return y[
-            0
-        ]  # if (Z < 50 or N < 50) else y[1]  # y[0]->spherical, y[1]->deformed
+        return y[0] if (Z < 50 or N < 50) else y[1]  # y[0]->spherical, y[1]->deformed
 
 
 dz_be = DuffloZuker10()

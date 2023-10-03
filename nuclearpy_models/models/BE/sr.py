@@ -33,9 +33,13 @@ class SRBEModels:
         P = self.compute_P(Z, N)
         I = self.compute_I(Z, N)
         O = A ** (2 / 3)
-        T = Z - N
+        T = abs(Z - N)
+        K = A ** (-1 / 3)
+        v = self.protons_in_shell(Z)
+        u = self.neutrons_in_shell(N)
+
         if "dz" in self.base.lower():
-            return self.sr_dz_be(Z, N, d, P, I, O, T)
+            return self.sr_dz_be(Z, N, K, A, d, P, I, O, T, u, v)
         elif "semf" in self.base.lower():
             return self.sr_semf_be(Z, N, d, P, I, O, T)
         elif "ens" in self.base.lower():
@@ -94,80 +98,56 @@ class SRBEModels:
     ):
         """semf corrected"""
         corr = (
-            -O * (params[0] * params[1] ** P - params[2]) * (O - params[3])
-            - params[4]
-            * (params[5] * O - params[6])
+            -O * (2.15 * 0.618**P - 0.523) * (O - 0.364)
+            - 1.01
+            * (0.0708 * O - 2.11)
             * (
-                ((N + O) * (N - O ** params[7] + O)) ** params[8]
-                * (params[9] - params[10] * O)
-                + (params[11] - (N * O + params[12]) ** I) * (O - params[3])
+                ((N + O) * (N - O**0.57 + O)) ** 0.469 * (2.94 - 0.102 * O)
+                + (1.17 - (N * O + 1.12) ** I) * (O - 0.364)
             )
             * (N**2) ** I
-        ) / (O * (I - params[8]) * (O - params[3]))
+        ) / (O * (I - 0.469) * (O - 0.364))
         return np.float64(corr)
 
     def dz_corr(
         self,
         Z,
         N,
+        K,
+        A,
         d,
         P,
         I,
         O,
         T,
-        params=[
-            2.32,
-            1.15,
-            0.0523,
-            2.82,
-            2.01e-5,
-            1.01,
-            3.53,
-            2.56e-5,
-            0.73,
-            0.0558,
-            19.1,
-            0.0219,
-            0.0446,
-            1.49,
-        ],
+        u,
+        v
+        # params=[8.59e-01, 1.24e00, 5.37e-08, 0.00083, 1.96e-18],
     ):
         """dz corrected"""
-
         val = (
-            -(
-                Z * I
-                + params[0]
-                * (P - params[1])
-                * (
-                    -Z
-                    * (
-                        params[2]
-                        * P
-                        * (
-                            O ** params[3]
-                            * (
-                                params[4] * I * (-params[5] * P + I + params[6])
-                                + params[7]
-                            )
-                            + params[8]
+            (((P + P) / N) - I)
+            * (
+                (P * 0.18641840277500055)
+                - (
+                    -1.2335152270631435
+                    - (
+                        (
+                            (((1.0443901604611923**v) - (N - Z)) - (P - (u - v)))
+                            * ((u + (((1.0443901604611923**u) / Z) ** d)) - N)
                         )
-                        - params[9]
+                        / A
                     )
-                    + P
-                    + params[10] * (P + I) * (params[11] * O + params[12]) ** O
-                    + params[13]
                 )
             )
-            / Z
-        )
+        ) + 0.12817605758700557
         return np.float64(val)
 
     def sr_semf_be(self, Z, N, d, P, I, O, T):
         return self.semf_corr(Z, N, d, P, I, O, T) + semf_be(Z, N)
 
-    def sr_dz_be(self, Z, N, d, P, I, O, T):
-        return self.dz_corr(Z, N, d, P, I, O, T) + dz_be(Z, N)
+    def sr_dz_be(self, Z, N, K, A, d, P, I, O, T, u, v):
+        return self.dz_corr(Z, N, K, A, d, P, I, O, T, u, v) + dz_be(Z, N)
 
     def sr_ens_be(self, Z, N, d, P, I, O, T, weights=[0.5, 0.5]):
         """
@@ -175,5 +155,15 @@ class SRBEModels:
         """
         return (
             weights[0] * self.sr_semf_be(Z, N, d, P, I, O, T)
-            + weights[1] * self.sr_dz_be(Z, N, d, P, I, O, T)
+            + weights[1] * self.sr_dz_be(Z, N, K, A, d, P, I, O, T, u, v)
         ) / sum(weights)
+
+    @staticmethod
+    def protons_in_shell(Z):
+        z_magic_numbers = [8, 20, 28, 50, 82, 126]
+        return min(z_magic_numbers, key=lambda x: abs(x - Z))
+
+    @staticmethod
+    def neutrons_in_shell(N):
+        n_magic_numbers = [8, 20, 28, 50, 82, 126, 184]
+        return min(n_magic_numbers, key=lambda x: abs(x - N))

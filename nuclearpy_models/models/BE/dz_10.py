@@ -1,6 +1,14 @@
 from __future__ import division
 import numpy as np
 from math import sqrt
+import sys
+import os
+import pandas as pd
+import joblib
+from .dz_10_dict import data
+
+# path to tis file
+FILEPATH = os.path.abspath(__file__)
 
 
 class DuffloZuker10:
@@ -20,11 +28,30 @@ class DuffloZuker10:
             ],
             order="F",
         )
+        self.__name__ = "DuffloZuker10"
+        self.precomputed_path = os.path.dirname(FILEPATH)
+        self.df_precomputed = pd.DataFrame(data)
 
-    def __call__(self, Z, N):
-        return self.binfing_energy(Z, N)
+        self.df_precomputed["N"] = self.df_precomputed.A - self.df_precomputed.Z
 
-    def binfing_energy(self, Z, N):
+    def precomputed(self, Z, N):
+        try:
+            mass_excess = self.df_precomputed.loc[
+                (self.df_precomputed["Z"] == Z) & (self.df_precomputed["N"] == N), "M"
+            ].values[0]
+            E = Z * 7.28903 + N * 8.07138 - mass_excess
+            return E  # MeV
+        except IndexError:
+            print(f"Z={Z}, N={N} not found in precomputed data")
+            return self.binding_energy(Z, N)
+
+    def __call__(self, Z, N, calc=False):
+        if calc:
+            return self.binding_energy(Z, N)
+        else:
+            return self.precomputed(Z, N)
+
+    def binding_energy(self, Z, N):
         mass_excess = self.mass_excess(Z, N)
         E = Z * 7.28903 + N * 8.07138 - mass_excess
         return E  # MeV
@@ -47,7 +74,7 @@ class DuffloZuker10:
         term_0 = (-z2 + 0.76 * z2 ** (2 / 3)) / rc  # Coulomb energy
         return nuclei, a, t, r, rc, ra, z2, term_0
 
-    def binfing_energy(
+    def binding_energy(
         self,
         Z: int,
         N: int,
@@ -56,6 +83,7 @@ class DuffloZuker10:
         nuclei, a, t, r, rc, ra, z2, term_0 = self.get_internal_features(Z, N)
         term[0] = term_0
         for deformed in [0, 1]:  # deformed=0  spherical, deformed=1  deformed
+            y[0] = 0
             ju = 4 if deformed else 0  # nucleons associated to deform.
             map(lambda x: x.fill(0), [term[1:], noc, onp, os, op])  # init with 0
             for I3 in [0, 1]:
@@ -136,6 +164,9 @@ class DuffloZuker10:
         return y[
             0
         ]  # if (Z < 50 or N < 50) else y[1]  # y[0]->spherical, y[1]->deformed
+
+    def __repr__(self) -> str:
+        return "DuffloZuker10"
 
 
 dz_be = DuffloZuker10()

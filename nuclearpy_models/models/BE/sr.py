@@ -48,8 +48,8 @@ class SRBEModels:
     @staticmethod
     def compute_P(Z, N):
         """promiscuity factor"""
-        z_magic_numbers = [8, 20, 28, 50, 82, 126]
-        n_magic_numbers = [8, 20, 28, 50, 82, 126, 184]
+        z_magic_numbers = [2, 8, 20, 28, 50, 82, 126]
+        n_magic_numbers = [2, 8, 20, 28, 50, 82, 126, 184]
         clossest_z = min(z_magic_numbers, key=lambda x: abs(x - Z))
         clossest_n = min(n_magic_numbers, key=lambda x: abs(x - N))
         vp = abs(Z - clossest_z)
@@ -160,10 +160,10 @@ class SRBEModels:
 
     @staticmethod
     def protons_in_shell(Z):
-        z_magic_numbers = [8, 20, 28, 50, 82, 126]
+        z_magic_numbers = [2, 8, 20, 28, 50, 82, 126]
         return min(z_magic_numbers, key=lambda x: abs(x - Z))
 
     @staticmethod
     def neutrons_in_shell(N):
-        n_magic_numbers = [8, 20, 28, 50, 82, 126, 184]
+        n_magic_numbers = [2, 8, 20, 28, 50, 82, 126, 184]
         return min(n_magic_numbers, key=lambda x: abs(x - N))

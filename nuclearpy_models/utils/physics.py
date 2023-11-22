@@ -185,3 +185,7 @@ class PhysicsQualities:
         # νp(n) is the difference between the proton (neutron) number
         # of a particular nucleus and the nearest magic number.
         clossest_z = min(z_magic_numbers, key=lambda x: abs(x - Z))
+        clossest_n = min(n_magic_numbers, key=lambda x: abs(x - N))
+        vp = abs(Z - clossest_z)
+        vn = abs(N - clossest_n)
+        return (vp * vn) / (vp + vn + 1)

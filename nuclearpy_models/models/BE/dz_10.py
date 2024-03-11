@@ -12,7 +12,7 @@ FILEPATH = os.path.abspath(__file__)
 
 
 class DuffloZuker10:
-    def __init__(self) -> None:
+    def __init__(self, verbose=False) -> None:
         self.coeffs = np.array(
             [
                 0.7043,
@@ -31,6 +31,7 @@ class DuffloZuker10:
         self.__name__ = "DuffloZuker10"
         self.precomputed_path = os.path.dirname(FILEPATH)
         self.df_precomputed = pd.DataFrame(data)
+        self.verbose = verbose
 
         self.df_precomputed["N"] = self.df_precomputed.A - self.df_precomputed.Z
 
@@ -42,7 +43,8 @@ class DuffloZuker10:
             E = Z * 7.28903 + N * 8.07138 - mass_excess
             return E  # MeV
         except IndexError:
-            print(f"Z={Z}, N={N} not found in precomputed data")
+            if self.verbose:
+                print(f"Z={Z}, N={N} not found in precomputed data")
             return self.binding_energy(Z, N)
 
     def __call__(self, Z, N, calc=False):

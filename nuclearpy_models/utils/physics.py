@@ -60,14 +60,18 @@ class PhysicsQualities:
         closest_bigger = [x for x in n_magic_numbers if x >= N]
         return closest_bigger[0] - N
 
+    @np.vectorize
     def compute_P(self, Z, N):
         """promiscuity factor"""
-        try:
-            vp = self.protons_for_shell(Z)
-            vn = self.neutrons_for_shell(N)
-            return (vp * vn) / (vp + vn + 1)
-        except:
-            print(Z, N)
+        z_magic_numbers = [2, 8, 20, 28, 50, 82, 126]
+        n_magic_numbers = [2, 8, 20, 28, 50, 82, 126, 184]
+        # νp(n) is the difference between the proton (neutron) number
+        # of a particular nucleus and the nearest magic number.
+        clossest_z = min(z_magic_numbers, key=lambda x: abs(x - Z))
+        clossest_n = min(n_magic_numbers, key=lambda x: abs(x - N))
+        vp = abs(Z - clossest_z)
+        vn = abs(N - clossest_n)
+        return (vp * vn) / (vp + vn + 1e-6)
 
     @staticmethod
     def compute_d(Z, N):

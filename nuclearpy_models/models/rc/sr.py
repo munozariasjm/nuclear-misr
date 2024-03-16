@@ -97,27 +97,20 @@ class SrRc:
         """Returns a dictionary for the features starting with the given Z and N:
         ['Z', 'A', 'N', 'x', 'ee', 'eo', 'oe', 'oo', 'P', 'ax', 'K', 'S', 'nmz', 'zmn']
         """
-        z_magic_numbers = [2, 8, 20, 28, 50, 82, 126]
-        n_magic_numbers = [2, 8, 20, 28, 50, 82, 126, 184]
-        clossest_z = min(z_magic_numbers, key=lambda x: abs(x - Z))
-        clossest_n = min(n_magic_numbers, key=lambda x: abs(x - N))
-        vp = abs(Z - clossest_z)
-        vn = abs(N - clossest_n)
-        P = (vp * vn) / (vp + vn + 1e-6)
+
         A = Z + N
         ee = int(Z % 2 == 0 and N % 2 == 0)
         eo = int(Z % 2 == 0 and N % 2 != 0)
         oe = int(Z % 2 != 0 and N % 2 == 0)
         oo = int(Z % 2 != 0 and N % 2 != 0)
         d = ee - oo
-        x = (N - Z) ** 2
-        h = Z / N
-        K = A ** (1 / 3)
+        x = (N - Z)**2
+        P = compute_P(Z, N)
+        h  = Z / N
+        K = A ** (1/3)
         S = (N - Z) / A
-        # Number of protons over the closest magic number from below
-        oz = Z - min(z_magic_numbers, key=lambda x: abs(x - Z))
-        # Number of neutrons over the closest magic number from below
-        on = N - min(n_magic_numbers, key=lambda x: abs(x - N))
+        t = A ** (2/3)
+
         return {
             "Z": Z,
             "A": A,
@@ -127,13 +120,13 @@ class SrRc:
             "eo": eo,
             "oe": oe,
             "oo": oo,
+            "t": t,
             "h": h,
             "P": P,
             "K": K,
             "S": S,
             "d": d,
-            "oz": oz,
-            "on": on,
+
         }
 
     @staticmethod

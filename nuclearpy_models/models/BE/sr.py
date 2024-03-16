@@ -4,7 +4,7 @@ from typing import Any, List
 import numpy as np
 
 
-class SRBEModels:
+class SrBe:
     def __init__(self, base_model: str = "base") -> None:
         self.exprs_list = [
             "(((Z + ((-1.1518949008311261 / h) * 0.9191416779446455)) + h) * (((32.42652864512878 - (K / h)) * S) - -16.68481023317041))",
@@ -17,17 +17,74 @@ class SRBEModels:
             "((((0.8010663851875898 ** N) * (A + ((A / h) - x))) - 0.111962577802992) * ((((P / np.exp(0.5618598224805517)) - S) - (0.8010663851875898 ** oe)) - S))",
             "((-9.81179689889166e-16 * (((2.0946679715754835 + 0.879009069930303) - P) - oo)) * (((x + -1334.5332266527023) * ((x + (x + -1334.5332266527023)) + np.log(0.07629937107106072))) * ((x - (x + -1334.5332266527023)) ** (K + -2.070055596300072))))",
             "np.exp(-0.8948709195716154 * (((((0.9270832840257225 ** (N + N)) * N) * ((0.9270832840257225 ** N) * N)) + (0.02994986947801994 * x)) + ((((P ** 1.9412112817066696) * (h ** t)) / 0.46865314891483706) - 1.2343874050146584)))",
-            # "((-0.4788113460721299 + ((((0.012167385837240422 - ((-2.047639966100053 / h) - S)) + (K * K)) * ((P * P) ** (K * 0.7815175522702191))) * S)) * ((0.07073588220193987 + (oo / t)) ** (P * P)))",
-            # "((((((((-0.4143934593308956 + (Z - (P - -1.0359989119430404))) - np.exp(P)) + A) * (h ** (P + ee))) - 0.4411245021335934) * (P ** 1.34247611756834)) * -0.0011400308784582946) + 0.04779878468835499)",
-            # "((np.exp((-0.5287541136581156 / 1.542599901612986) - ((((0.8868912212695856 + -0.01038483690643215) * K) - 3.134393705374266) ** A)) - ((-0.01038483690643215 * np.exp(S)) * np.exp(K / 1.214843936962893))) - 0.9377251169374243)",
-            # "((((((np.exp(P) * (((t / -0.23680052314399586) * np.exp(K)) * np.exp(2.4101110036495026))) * np.exp(0.3024939640586434)) / np.exp(A)) * ((np.exp(P) / -0.814964922771754) + ee)) * ((np.exp(K) * x) * x)) * x)",
-            # "(-0.0001435325624834701 * ((((np.exp(N) - (np.exp(N) - x)) * ee) * N) - -0.14882302746736192))",
-            # "np.exp((((d - (K + (0.20012509200934805 - (h - ((P - (0.6877218764407389 - 0.6855985808423883)) * x))))) + 0.5300799768762136) * 1.5778867052836374) + h)",
-            # "((((np.exp(P) / h) * eo) * np.exp(-0.18988241370166287 * Z)) - np.exp(((-0.18018060012176534 + -0.09575946147664494) * Z) + (eo - -1.7413864226030702)))",
+            "((-0.4788113460721299 + ((((0.012167385837240422 - ((-2.047639966100053 / h) - S)) + (K * K)) * ((P * P) ** (K * 0.7815175522702191))) * S)) * ((0.07073588220193987 + (oo / t)) ** (P * P)))",
+            "((((((((-0.4143934593308956 + (Z - (P - -1.0359989119430404))) - np.exp(P)) + A) * (h ** (P + ee))) - 0.4411245021335934) * (P ** 1.34247611756834)) * -0.0011400308784582946) + 0.04779878468835499)",
+            "((np.exp((-0.5287541136581156 / 1.542599901612986) - ((((0.8868912212695856 + -0.01038483690643215) * K) - 3.134393705374266) ** A)) - ((-0.01038483690643215 * np.exp(S)) * np.exp(K / 1.214843936962893))) - 0.9377251169374243)",
         ]
+        self.max_index = len(self.exprs_list)
+        self.expr_dict = {i: self.exprs_list[i] for i in range(self.max_index)}
+
+        self.optimal_params_mean = np.array(
+            [
+                0.99981366,
+                0.98741602,
+                0.93160026,
+                1.25239084,
+                0.89176424,
+                1.14216409,
+                1.18282589,
+                1.03099573,
+                0.97350482,
+                1.51548953,
+                1.21417095,
+                1.22029288,
+                1.44589542,
+            ]
+        )
+        self.optimal_params_std = np.array(
+            [
+                7.33480329e-05,
+                7.11806534e-03,
+                3.69362896e-02,
+                8.81680867e-02,
+                1.02847980e-01,
+                1.01208746e-01,
+                1.02696271e-01,
+                1.20665450e-01,
+                2.09444776e-01,
+                1.40806118e-01,
+                1.83535877e-01,
+                2.81730164e-01,
+                2.15989585e-01,
+            ]
+        )
+
+    def get_expresion_term(self, index):
+        return self.expr_dict[index]
+
+    def __call__(self, Z, N, index=-1, bst=True) -> float:
+        features = self._get_features(Z, N)
+        if index == -1:
+            index = self.max_index - 1
+        elif index == 0:
+            return self.predict_symb_terms(
+                features, self.get_expresion_term(0)
+            ), np.abs(self.predict_symb_terms(features, self.get_expresion_term(1)))
+
+        terms = [self.get_expresion_term(i) for i in range(0, index)]
+        if not terms:
+            terms = [self.get_expresion_term(0)]
+        bst_output, unc = self.predict_with_uncertainty_boostrapping(Z, N, index)
+        if not bst:
+            return np.sum(self.predict_symb_terms(features, terms[index])), unc
+        else:
+            return bst_output, unc
 
     @staticmethod
-    def get_features(Z, N):
+    def _get_features(Z, N):
+        """Returns a dictionary for the features starting with the given Z and N:
+        ['Z', 'A', 'N', 'x', 'ee', 'eo', 'oe', 'oo', 'P', 'ax', 'K', 'S', 'nmz', 'zmn']
+        """
         z_magic_numbers = [2, 8, 20, 28, 50, 82, 126]
         n_magic_numbers = [2, 8, 20, 28, 50, 82, 126, 184]
         clossest_z = min(z_magic_numbers, key=lambda x: abs(x - Z))
@@ -65,42 +122,38 @@ class SRBEModels:
             "d": d,
         }
 
-    def predict_be(self, Z: int, N: int, expression: str):
-        """Predict the binding energy of a nucleus using the given expression"""
-        features = self.get_features(Z, N)
-        return eval(expression, None, features)
+    @staticmethod
+    def predict_symb_terms(features, model_str):
+        return eval(model_str, None, features)
 
-    def predict_sp(self, Z: int, N: int, f: callable):
-        pred_be_this = f(Z, N)
-        pred_be_up = f(Z + 1, N)
-        return pred_be_up - pred_be_this
+    def predict_term(self, Z, N, term):
+        feats = self._get_features(Z, N)
+        return self.predict_symb_terms(feats, term)
 
-    def predict_sn(self, Z: int, N: int, f: callable):
-        pred_be_this = f(Z, N)
-        pred_be_up = f(Z, N - 1)
-        return pred_be_up - pred_be_this
+    def predict_single_term(self, Z, N, index):
+        term = self.get_expresion_term(index)
+        return self.predict_term(Z, N, term)
 
-    def get_expression(self, max_index):
-        return " + ".join(self.exprs_list[:max_index])
-
-    def get_model(self, max_index):
-        st = self.get_expression(max_index).replace("x", "(N - Z) ** 2")
-        st = st.replace("h", "Z / N")
-        st = st.replace("K", "A ** (1 / 3)")
-        st = st.replace("S", "(N - Z) / A")
-        st = st.replace("t", "A ** (2 / 3)")
-        return st
-
-    def __call__(self, Z, N, index=-1, ensemble: List[callable] = []):
-        assert index < len(
-            self.exprs_list
-        ), "index must be less than the length of the learned expansion"
-        expression = self.get_expression(index)
-        pred = self.predict_be(Z, N, expression)
-        if ensemble:
-            for model in ensemble:
-                pred += model(Z, N) / len(ensemble)
-        return pred
+    def predict_with_uncertainty_boostrapping(
+        self,
+        Z,
+        N,
+        index,
+        N_ITERATIONS=10_000,
+    ):
+        terms = [self.get_expresion_term(i) for i in range(0, index)]
+        preds_per_term = np.array([self.predict_term(Z, N, term) for term in terms])
+        preds = np.dot(
+            np.random.normal(
+                self.optimal_params_mean[: len(terms)],
+                self.optimal_params_std[: len(terms)],
+                (N_ITERATIONS, len(terms)),
+            ),
+            preds_per_term,
+        )
+        extra_term = self.predict_term(Z, N, self.get_expresion_term(index))
+        unc = np.mean(np.abs(preds - preds.mean(axis=0)), axis=0) + np.abs(extra_term)
+        return preds.mean(), unc
 
 
-sr_be = SRBEModels()
+sr_be = SrBe()

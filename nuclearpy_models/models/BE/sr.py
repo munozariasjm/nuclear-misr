@@ -104,22 +104,27 @@ class SrBe:
         K = A ** (1 / 3)
         S = (N - Z) / A
         t = A ** (2 / 3)
+
+        # Number of protons over the closest magic number from below
+        oz = Z - min(z_magic_numbers, key=lambda x: abs(x - Z))
+        # Number of neutrons over the closest magic number from below
+        on = N - min(n_magic_numbers, key=lambda x: abs(x - N))
         return {
             "Z": Z,
             "A": A,
             "N": N,
             "x": x,
-            "ax": ax,
             "ee": ee,
             "eo": eo,
             "oe": oe,
             "oo": oo,
-            "t": t,
             "h": h,
             "P": P,
             "K": K,
             "S": S,
             "d": d,
+            "oz": oz,
+            "on": on,
         }
 
     @staticmethod
@@ -139,7 +144,7 @@ class SrBe:
         Z,
         N,
         index,
-        N_ITERATIONS=10_000,
+        N_ITERATIONS=1_000,
     ):
         terms = [self.get_expresion_term(i) for i in range(0, index)]
         preds_per_term = np.array([self.predict_term(Z, N, term) for term in terms])

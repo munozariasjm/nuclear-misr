@@ -37,9 +37,9 @@ class SrRc:
             8: "((((-0.6164943592049766 + (((oz / h) * -0.019535405196981315) - -0.019535405196981315)) ** N) / 0.6109634910349819) * oo)",
             9: "((-0.0004231223865735906 - (((on ** oo) * (-0.0052107021784933705 * on)) / A)) / h)",
             10: "(((0.001489590152797498 / (1.162580718921562 - oz)) * (((oe * h) + eo) - P)) / 0.33113516554290906)",
-            # 11: "((((oz * ((2.5112647929755023 / (Z + -0.37892908364382)) * 1.0319078765296386)) ** Z) + S) * -0.0037334035169424708)",
-            # 12: "(((((0.7043599688790316 * -0.18018570969789297) + 0.12820228100582828) / (0.23845339742013413 - S)) / 1.0438595661715504) ** Z)",
-            # 13: "((0.0016509066361613859 / (on + -9.448405598196786)) * ((P ** 1.3702681472747735) / 1.525287162904831))",
+            11: "((((oz * ((2.5112647929755023 / (Z + -0.37892908364382)) * 1.0319078765296386)) ** Z) + S) * -0.0037334035169424708)",
+            12: "(((((0.7043599688790316 * -0.18018570969789297) + 0.12820228100582828) / (0.23845339742013413 - S)) / 1.0438595661715504) ** Z)",
+            13: "((0.0016509066361613859 / (on + -9.448405598196786)) * ((P ** 1.3702681472747735) / 1.525287162904831))",
         }
         self.max_index = len(list(self.expr_dict.keys())) - 1
         self.optimal_params_mean = np.array(
@@ -54,6 +54,9 @@ class SrRc:
                 -0.08159929,
                 1.02284745,
                 1.55923727,
+                1.00000000,  #
+                1.00000000,  #
+                1.00000000,  #
             ]
         )
         self.optimal_params_std = np.array(
@@ -68,6 +71,9 @@ class SrRc:
                 2.45251729e-01,
                 6.75270036e-01,
                 7.40305174e-01,
+                0.00000000e00,
+                0.00000000e00,
+                0.00000000e00,
             ]
         )
 
@@ -104,13 +110,23 @@ class SrRc:
         oe = int(Z % 2 != 0 and N % 2 == 0)
         oo = int(Z % 2 != 0 and N % 2 != 0)
         d = ee - oo
-        x = (N - Z)**2
-        P = compute_P(Z, N)
-        h  = Z / N
-        K = A ** (1/3)
+        x = (N - Z) ** 2
+        z_magic_numbers = [2, 8, 20, 28, 50, 82, 126]
+        n_magic_numbers = [2, 8, 20, 28, 50, 82, 126, 184]
+        clossest_z = min(z_magic_numbers, key=lambda x: abs(x - Z))
+        clossest_n = min(n_magic_numbers, key=lambda x: abs(x - N))
+        vp = abs(Z - clossest_z)
+        vn = abs(N - clossest_n)
+        P = (vp * vn) / (vp + vn + 1e-6)
+        h = Z / N
+        K = A ** (1 / 3)
         S = (N - Z) / A
-        t = A ** (2/3)
+        t = A ** (2 / 3)
 
+        # Number of protons over the closest magic number from below
+        oz = Z - min(z_magic_numbers, key=lambda x: abs(x - Z))
+        # Number of neutrons over the closest magic number from below
+        on = N - min(n_magic_numbers, key=lambda x: abs(x - N))
         return {
             "Z": Z,
             "A": A,
@@ -120,13 +136,13 @@ class SrRc:
             "eo": eo,
             "oe": oe,
             "oo": oo,
-            "t": t,
             "h": h,
             "P": P,
             "K": K,
             "S": S,
             "d": d,
-
+            "oz": oz,
+            "on": on,
         }
 
     @staticmethod
@@ -136,6 +152,9 @@ class SrRc:
     def predict_term(self, Z, N, term):
         feats = self._get_features(Z, N)
         return self.predict_symb_terms(feats, term)
+
+    def predict_index(self, Z, N, index):
+        return self.predict_term(Z, N, self.get_expresion_term(index))
 
     def predict_with_uncertainty_boostrapping(
         self,

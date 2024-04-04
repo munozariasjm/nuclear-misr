@@ -1,6 +1,6 @@
 # Nuclear PyModels
 
-A simple python package to call naive python models
+Python implementation of nuclear models obtained in the paper []().
 
 ## Installation
 
@@ -13,7 +13,7 @@ git clone ...
 Then install the package
 
 ```bash
-cd nuclear-pymodels
+cd nuclear-misr
 pip install .
 ```
 

@@ -20,7 +20,6 @@ def compute_P(Z, N):
 
 def mnp_rc(Z: int, N: int):
     """modified_np_isospin"""
-
     A = N + Z
     Z = int(Z)
     N = int(N)

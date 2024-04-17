@@ -4,8 +4,9 @@ import pandas as pd
 from openpyxl import load_workbook
 import plotly.express as px
 
-PATH2DATA = pd.read_excel("Data/Theory/MasterNuclei.xlsx")
-exp_data = pd.read_csv("Data/Experiment/AME2020.csv")
+PATH2DATA = "./Data/Theory/MasterNuclei.xlsx"
+th2DATA = pd.read_excel(PATH2DATA)
+exp_data = pd.read_csv("./Data/Experimental/AME2020.csv")
 #### Create a class
 
 
@@ -72,9 +73,6 @@ def inference_rc(Z, N, index, thdfs, data):
     return pd.DataFrame(charge_radii_preds)
 
 
-def plot_be(Z, N, index, thdfs, data):
-
-
 def main():
     st.title("Discovering Nuclear Models from Symbolic Machine Learning")
 
@@ -94,13 +92,15 @@ def main():
     # Now display the models
     st.sidebar.title("Models")
     possible_theory_models = [
-    "DD-ME2",
-    "SKMS",
-    "NL3S",
-    "UNEDF1",
+        "DD-ME2",
+        "SKMS",
+        "NL3S",
+        "UNEDF1",
     ]
     used_dfs = st.sidebar.multiselect(
-        "Select the datasets to use", th_datastes, th_datastes
+        "Select the datasets to use",
+        th_datastes,
+        possible_theory_models,
     )
     thdfs = get_datasets(used_dfs)
     st.sidebar.write("The following datasets are used:")
@@ -109,7 +109,7 @@ def main():
     be_pred = inference_be(Z, N, index, thdfs, exp_data)
     rc_pred = inference_rc(Z, N, index, thdfs, exp_data)
 
-    cols =  st.columns(2)
+    cols = st.columns(2)
     with cols[0]:
         st.write("Binding Energy")
         st.write(be_pred)
@@ -119,3 +119,5 @@ def main():
         st.write(rc_pred)
 
 
+if __name__ == "__main__":
+    main()

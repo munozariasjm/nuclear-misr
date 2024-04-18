@@ -166,15 +166,13 @@ def plot_values(series, title):
     )
     ax.set_ylabel(title)
     # remove xticks
-    non_unc = [i for i in series.index if ("unc" not in i and not series[i] is None)]
-    #
+    non_unc = [i for i in series.index if ("unc" not in i)]
+    values = [series[i] for i in non_unc if isinstance(series[i], float)]
     ax.set(
         xlim=(-3, len(series) + 1),
         ylim=(
-            np.min([series[i] for i in non_unc])
-            - 1 * np.std([series[i] for i in non_unc]),
-            np.max([series[i] for i in non_unc])
-            + 1 * np.std([series[i] for i in non_unc]),
+            np.min(values) - 1 * np.std(values),
+            np.max(values) + 1 * np.std(values),
         ),
     )
     ax.set_xticks([])

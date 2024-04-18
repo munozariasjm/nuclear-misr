@@ -43,3 +43,19 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 [Laboratory of Exotic Molecules and Atoms](https://www.garciaruizlab.com/)
 Laboratory for Nuclear Science, Massachusetts Institute of Technology.
+
+## Citation
+
+If you use this code in your research, please cite the paper:
+
+```
+@article{Munoz:2024xjg,
+    author = "Munoz, Jose M. and Udrescu, Silviu M. and Garcia Ruiz, Ronald F.",
+    title = "{Discovering Nuclear Models from Symbolic Machine Learning}",
+    eprint = "2404.11477",
+    archivePrefix = "arXiv",
+    primaryClass = "nucl-th",
+    month = "4",
+    year = "2024"
+}
+```

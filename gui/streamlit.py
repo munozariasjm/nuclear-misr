@@ -246,9 +246,15 @@ def main():
             ccols = st.columns(2)
             st.divider()
             with ccols[0]:
-                plot_values(be_pred, "Binding Energy [MeV]")
+                try:
+                    plot_values(be_pred, "Binding Energy [MeV]")
+                except Exception as e:
+                    print(e)
             with ccols[1]:
-                plot_values(rc_pred, "Charge Radii [fm]")
+                try:
+                    plot_values(rc_pred, "Charge Radii [fm]")
+                except Exception as e:
+                    print(e)
 
 
 if __name__ == "__main__":

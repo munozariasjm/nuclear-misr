@@ -1,8 +1,8 @@
 # Nuclear PyModels
 
-Python implementation of nuclear models obtained in the paper []().
+Python implementation of nuclear models obtained in the paper [Discovering Nuclear Models from Symbolic Machine Learning](https://arxiv.org/abs/2404.11477).
 
-Interact with the models online using the [nuclear-pymodels web app]().
+Interact with the models online using the [nuclear-pymodels web app](https://nuclear-misr.streamlit.app/).
 
 ## Installation
 

@@ -255,6 +255,11 @@ def main():
                     plot_values(rc_pred, "Charge Radii [fm]")
                 except Exception as e:
                     print(e)
+            # st.divider()
+            st.sidebar.write(
+                """The data for the DFT models was taken from the MasterNuclei dataset
+                compilated by the [BMex project](https://bmex.dev/)."""
+            )
 
 
 if __name__ == "__main__":

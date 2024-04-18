@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from openpyxl import load_workbook
-import plotly.express as px
 import matplotlib.pyplot as plt
 import joblib
 import os

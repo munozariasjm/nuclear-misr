@@ -191,7 +191,7 @@ def main():
     st.title("Discovering Nuclear Models from Symbolic Machine Learning")
 
     st.write(
-        "This is a web application that allows you to discover nuclear models from symbolic machine learning."
+        "This is a web application to inference on the MISR and ARD models for the binding energy and charge radii of atomic nuclei."
     )
     st.write("Read the paper [here](https://arxiv.org/abs/2404.11477)")
     st.sidebar.title("Models")

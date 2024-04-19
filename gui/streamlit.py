@@ -19,8 +19,10 @@ PATH_TH_DATA = f"{home}/Data/Theory/MasterNuclei.xlsx"
 th2DATA = pd.read_excel(PATH_TH_DATA)
 PATH_EXP_DATA = f"{home}/Data/Experimental/AME2020.csv"
 PATH_RC_DATA = f"{home}/Data/Experimental/rc.csv"
+PATH_FRDM_DATA = f"{home}/Data/Theory/FRDM2012.csv"
 exp_data = pd.read_csv(PATH_EXP_DATA)
 rc_data = pd.read_csv(PATH_RC_DATA)
+frdm_data = pd.read_csv(PATH_FRDM_DATA)
 PATH_MODEL = f"{home}/Data/model/be_model.pkl"
 model = joblib.load(PATH_MODEL)
 
@@ -49,10 +51,10 @@ def inference_be(Z, N, index, thdfs, data):
     binding_energy_preds = {
         # "Z": Z,
         # "N": N,
+        "Exp": data["BE"].values[0],
         "MISR": be_misr_pred[0],
         "unc_MISR": be_misr_pred[1],
         "DZ": dz_be(Z, N),
-        "Exp": data["BE"].values[0],
     }
     # prediction for the binding energy with saved model
     ard_p = model.predict(
@@ -63,6 +65,12 @@ def inference_be(Z, N, index, thdfs, data):
     binding_energy_preds["ARD"] = ard_p[0][0]
     binding_energy_preds["unc_ARD"] = ard_p[1][0]
     print(binding_energy_preds)
+    try:
+        binding_energy_preds["FRDM"] = (
+            frdm_data.query("Z == @Z").query("N == @N")["BE"].values[0]
+        )
+    except:
+        binding_energy_preds["FRDM"] = None
     try:
         binding_energy_preds["Exp"] = (
             data.query("Z == @Z").query("N == @N")["BE"].values[0]
